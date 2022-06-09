@@ -57,7 +57,7 @@ export default async function connectWallet() {
         let { chainId, name } = network
         // update the store with all values
         ethersStore.newProvider(provider, signer, signerAddress, name, chainId)
-        console.log("ethersStore", get(ethersStore))
+        //console.log("ethersStore", get(ethersStore))
     } catch (error) {
         console.log(error)
     }
@@ -77,27 +77,27 @@ function stopMetaMaskListeners() {
 
 //listener for account changes
 const updateSelectedAddress = async (accounts) => {
-    console.log("change account listener")
+    // console.log("change account listener")
     if (accounts.length) {
-        console.log("change account")
+        // console.log("change account")
         // update signer and signer address
         const signer = get(ethersStore).provider.getSigner()
         const signerAddress = await get(ethersStore).signer.getAddress()
     } else {
-        console.log("reset connection")
+        //console.log("reset connection")
         // reset connection and stop metamask listeners
         stopMetaMaskListeners()
         ethersStore.resetConnection()
-        console.log("ethersStore", get(ethersStore))
+        // console.log("ethersStore", get(ethersStore))
     }
 }
 
 //listener for network change
 const updateNetwork = async (chainId) => {
-    console.log("changes blockchain listener")
+    // console.log("changes blockchain listener")
     stopMetaMaskListeners()
     await connectWallet()
-    console.log("ethersStore", get(ethersStore))
+    // console.log("ethersStore", get(ethersStore))
 }
 
 //listener for metamask connectio

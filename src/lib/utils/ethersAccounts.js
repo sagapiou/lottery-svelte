@@ -9,12 +9,10 @@ async function addressBalance(_address) {
     // if no address is passed the signers balance is returned
     // The balance is in ethers rounded to 6 decimals
     let balance
-    if (!_address) {
-        //console.log("no address", get(ethersStore).signerAddress, get(ethersStore).provider)
-        balance = await get(ethersStore).provider.getBalance(get(ethersStore).signerAddress)
-    } else {
-        //console.log("address", _address, get(ethersStore).signerAddress, get(ethersStore).provider)
+    if (typeof _address !== "undefined" && _address !== null) {
         balance = await get(ethersStore).provider.getBalance(_address)
+    } else {
+        balance = await get(ethersStore).provider.getBalance(get(ethersStore).signerAddress)
     }
     balance = Math.round(ethers.utils.formatEther(balance) * 1e6) / 1e6
     return balance
@@ -24,10 +22,10 @@ async function addressBalance(_address) {
 async function addressCode(_address) {
     // if no address is passed the signers balance is used and 0x0 is returned
     let code
-    if (!_address) {
-        code = await get(ethersStore).provider.getCode(get(ethersStore).signerAddress)
-    } else {
+    if (typeof _address !== "undefined" && _address !== null) {
         code = await get(ethersStore).provider.getCode(_address)
+    } else {
+        code = await get(ethersStore).provider.getCode(get(ethersStore).signerAddress)
     }
     return code
 }
@@ -44,10 +42,10 @@ async function addressNonce(_address) {
     //in ethereum nonce reporesents the number of transactions an EOA has sent
     // in case of a contract it is the number of deployments this contracts has done (if it is a factory contract)
     let nonce
-    if (!_address) {
-        nonce = await get(ethersStore).provider.getTransactionCount(get(ethersStore).signerAddress)
-    } else {
+    if (typeof _address !== "undefined" && _address !== null) {
         nonce = await get(ethersStore).provider.getTransactionCount(_address)
+    } else {
+        nonce = await get(ethersStore).provider.getTransactionCount(get(ethersStore).signerAddress)
     }
     return nonce
 }

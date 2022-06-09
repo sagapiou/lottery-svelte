@@ -1,15 +1,16 @@
 <script>
-    import ConnectButton from "./connectButton.svelte"
+    //import ConnectButton from "./connectButton.svelte"
     
 </script>
 
 <svelte:head>
-    <ConnectButton />
     <title>Smart Contract</title>
     <meta name="Dapp" content="Svelte app" />
 </svelte:head>
 
 <section>
+    <!-- <ConnectButton /> -->
+
     Lottery Details : <br>
     <!-- <Wallet /> -->
 </section>
