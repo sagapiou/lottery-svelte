@@ -261,7 +261,7 @@
                             <div class="stat-title">Players</div>
                             <div class="stat-value">
                                 {#each players as player, index}
-                                    {index} - {player}
+                                    {index} - {player}<br />
                                 {/each}
                             </div>
                             <div class="stat-desc">Players taking part</div>
