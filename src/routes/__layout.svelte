@@ -12,7 +12,8 @@
     import { sliceAddress, roundedBalanceEthFromWei } from "$lib/utils/various"
 
     let balance
-    let lotteryAddress = import.meta.env.VITE_CONTRACT_ADDRESS_RINKEBY
+    //let lotteryAddress = import.meta.env.VITE_CONTRACT_ADDRESS_RINKEBY
+    let lotteryAddress = "0xa64F2a1da8559f52844029D6E401Dc916D15Fd0a"
     let nonce
     let block, blockDt, blockTS, blockTrans
     let { abi, contractName } = lottery

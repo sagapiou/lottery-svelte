@@ -6,13 +6,13 @@ import { ethers } from "ethers"
 const network = "rinkeby"
 
 // default provider
-const defaultProvider = ethers.getDefaultProvider(network, {
-    etherscan: import.meta.env.VITE_ETHERSCAN_API_KEY,
-    infura: import.meta.env.VITE_INFURA_RINKEBY_RPC_URL,
-})
+// const defaultProvider = ethers.getDefaultProvider(network, {
+//     etherscan: import.meta.env.VITE_ETHERSCAN_API_KEY,
+//     infura: import.meta.env.VITE_INFURA_RINKEBY_RPC_URL,
+// })
 
 const ethersStore = writable({
-    defaultProvider: defaultProvider,
+    defaultProvider: null,
     signer: null,
     signerAddress: "",
     selectedChainId: -1,
