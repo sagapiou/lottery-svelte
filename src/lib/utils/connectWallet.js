@@ -37,6 +37,7 @@ export default async function connectWallet() {
         let accounts = null
         let signer = null
         let signerAddress = ""
+        let balance = 0
         if (windowEthereum()) {
             //will try to connect to Metamask
             // will update the store with all three below values
@@ -44,6 +45,7 @@ export default async function connectWallet() {
             accounts = await provider.send("eth_requestAccounts", [])
             signer = provider.getSigner()
             signerAddress = await signer.getAddress()
+            balance = await signer.getBalance()
             // start the listeners for listening to change of network, and accounts
             startMetamaskListeners()
         } else {
@@ -56,7 +58,7 @@ export default async function connectWallet() {
         let network = await provider.getNetwork()
         let { chainId, name } = network
         // update the store with all values
-        ethersStore.newProvider(provider, signer, signerAddress, name, chainId)
+        ethersStore.newProvider(provider, signer, signerAddress, name, chainId, balance)
         //console.log("ethersStore", get(ethersStore))
     } catch (error) {
         console.log(error)
@@ -82,7 +84,9 @@ const updateSelectedAddress = async (accounts) => {
         // console.log("change account")
         // update signer and signer address
         const signer = get(ethersStore).provider.getSigner()
-        const signerAddress = await get(ethersStore).signer.getAddress()
+        const signerAddress = await signer.getAddress()
+        const balance = await signer.getBalance()
+        ethersStore.changeAccount(signer, signerAddress, balance)
     } else {
         //console.log("reset connection")
         // reset connection and stop metamask listeners

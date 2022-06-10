@@ -18,6 +18,7 @@ const ethersStore = writable({
     selectedChainId: -1,
     selectedChainName: "",
     walletConnected: false,
+    balance: 0,
     provider: null,
     eipProvider: null,
     evmProviderType: "EIP1193", // eg metamask
@@ -39,7 +40,7 @@ const customEthersStore = {
         })
     },
 
-    newProvider: (_provider, _signer, _signerAddress, _name, _chainId) => {
+    newProvider: (_provider, _signer, _signerAddress, _name, _chainId, _balance) => {
         ethersStore.update((state) => {
             return {
                 ...state,
@@ -49,16 +50,18 @@ const customEthersStore = {
                 selectedChainName: _name,
                 selectedChainId: _chainId,
                 walletConnected: true,
+                balance: _balance,
             }
         })
     },
 
-    changeAccount: (_signer, _signerAddress) => {
+    changeAccount: (_signer, _signerAddress, _balance) => {
         ethersStore.update((state) => {
             return {
                 ...state,
                 signer: _signer,
                 signerAddress: _signerAddress,
+                balance: _balance,
             }
         })
     },

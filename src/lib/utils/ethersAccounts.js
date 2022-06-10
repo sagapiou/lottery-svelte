@@ -51,3 +51,20 @@ async function addressNonce(_address) {
 }
 
 export { addressBalance, addressCode, storageAtSlot, addressNonce }
+
+//we can import above functions and use them from anywhere
+//     import {addressBalance,addressCode,storageAtSlot,addressNonce,} from "$lib/utils/ethersAccounts"
+//
+//     let balance
+//     let code, lotteryCode
+//     let storageSlot0Lottery, storageSlot1Lottery
+//     let nonce
+//async function providerAccountFunctions() {
+//    balance = await addressBalance()
+//   code = await addressCode()
+//   lotteryCode = await addressCode(lotteryAddress) // too long to show
+//   //console.log("lotteryCode:", lotteryCode)
+//   storageSlot0Lottery = await storageAtSlot(lotteryAddress, 0)
+//   storageSlot1Lottery = await storageAtSlot(lotteryAddress, 1)
+//    nonce = await addressNonce()
+//}

@@ -46,3 +46,24 @@ async function connectSignerToContract(_contract, _connector) {
 }
 
 export { connectToContract, connectSignerToContract }
+
+// function to use once we have imported above js that returns all the contract properties and methods
+//async function contractLotteryFunctions() {
+// if no signer is passed then the store signer will be used and if thereis no signer the provider
+//    contractLottery = await connectToContract(lotteryAddress, abi)
+
+// contract properties :
+// console.log("contract address :", contractLottery.address)
+// console.log("resolvedAddress: ", contractLottery.resolvedAddress)
+// console.log("deployTransaction: ", contractLottery.deployTransaction) // if produced by a contract factory
+// console.log("abi: ", contractLottery.interface) // abi
+// console.log("provider :", contractLottery.provider)
+// console.log("signer :", contractLottery.signer )
+
+//contract methods
+//console.log("is contract deployed :", await contractLottery.deployed()) //returns the contract
+//console.log("is value indexed :", contractLottery.isIndexed( value ))
+
+// change signer of the contract
+//connectSignerToContract(contractLottery)
+//}

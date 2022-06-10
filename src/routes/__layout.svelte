@@ -4,22 +4,15 @@
     import connectWallet from "$lib/utils/connectWallet"
     import ethersStore from "$lib/store/ethersStore"
     import { ethers } from "ethers"
-    import {
-        addressBalance,
-        addressCode,
-        storageAtSlot,
-        addressNonce,
-    } from "$lib/utils/ethersAccounts"
-    import { blockNr, blockData, blockDatawithTransactions } from "$lib/utils/ethersBlocks"
+    import { addressBalance, addressNonce } from "$lib/utils/ethersAccounts"
+    import { blockNr, blockData } from "$lib/utils/ethersBlocks"
     import lottery from "$lib/contracts/Lottery"
     import { connectToContract, connectSignerToContract } from "$lib/utils/ethersContracts"
     import TrReceipt from "$lib/components/trReceipt.svelte"
-    import { sliceAddress } from "$lib/utils/various"
+    import { sliceAddress, roundedBalanceEthFromWei } from "$lib/utils/various"
 
     let balance
-    let code, lotteryCode
     let lotteryAddress = import.meta.env.VITE_CONTRACT_ADDRESS_RINKEBY
-    let storageSlot0Lottery, storageSlot1Lottery
     let nonce
     let block, blockDt, blockTS, blockTrans
     let { abi, contractName } = lottery
@@ -27,6 +20,10 @@
     let sendPlayerContract = false
     let playerContractReply = false
     let transactionReceipt = null
+    let transactionError = null
+
+    $: slicedSigner = sliceAddress($ethersStore.signerAddress)
+    $: balanceSigner = roundedBalanceEthFromWei($ethersStore.balance, 8)
 
     onMount(async () => {
         await connectContract()
@@ -42,11 +39,6 @@
 
     async function providerAccountFunctions() {
         balance = await addressBalance()
-        //   code = await addressCode()
-        //   lotteryCode = await addressCode(lotteryAddress) // too long to show
-        //   //console.log("lotteryCode:", lotteryCode)
-        //   storageSlot0Lottery = await storageAtSlot(lotteryAddress, 0)
-        //   storageSlot1Lottery = await storageAtSlot(lotteryAddress, 1)
         nonce = await addressNonce()
     }
 
@@ -54,37 +46,18 @@
         block = await blockNr()
         blockDt = await blockData(block)
         blockTS = blockDt.timestamp
-        //   blockDt = await blockData(10815949) // object shoing it in the console
-        //   console.log("Block 10815949 data :", blockDt)
-        //   blockTrans = await blockDatawithTransactions(10815949) // object showing it in the console
-        //   console.log("Block 10815949 transactions :", blockTrans)
     }
 
     async function contractLotteryFunctions() {
-        // if no signer is passed then the store signer will be used and if thereis no signer the provider
         contractLottery = await connectToContract(lotteryAddress, abi)
-
-        // contract properties :
-        // console.log("contract address :", contractLottery.address)
-        // console.log("resolvedAddress: ", contractLottery.resolvedAddress)
-        // console.log("deployTransaction: ", contractLottery.deployTransaction) // if produced by a contract factory
-        // console.log("abi: ", contractLottery.interface) // abi
-        // console.log("provider :", contractLottery.provider)
-        // console.log("signer :", contractLottery.signer )
-
-        //contract methods
-        //console.log("is contract deployed :", await contractLottery.deployed()) //returns the contract
-        //console.log("is value indexed :", contractLottery.isIndexed( value ))
-
-        // change signer of the contract
-        //connectSignerToContract(contractLottery)
+        connectSignerToContract(contractLottery)
     }
 
     let totalPlayers
     let lotteryFee
     let recentWinner
     let lastTimeStamp
-    let players = []
+    let players = ["No players"]
 
     async function lotteryGetData() {
         // run specific functions of the contract that are with no state change
@@ -93,21 +66,32 @@
         recentWinner = sliceAddress(await contractLottery.getRecentWinner())
         lastTimeStamp = await contractLottery.getLastTimeStamp()
         for (let i = 0; i < totalPlayers; i++) {
-            players.push(sliceAddress(await contractLottery.getPlayer(0)))
+            players[i] = sliceAddress(await contractLottery.getPlayer(0))
         }
         console.log("players", players[0])
     }
 
     async function enterLottery() {
         sendPlayerContract = true
-        let tx = await contractLottery.enterLottery({
-            value: ethers.utils.parseUnits("0.1", "ether"),
-        })
-        transactionReceipt = await tx.wait(1)
-        playerContractReply = true
-        console.log("transactionReceipt: ", transactionReceipt)
-        lotteryGetData()
-        sendPlayerContract = false
+        let tx
+        try {
+            tx = await contractLottery.enterLottery({
+                value: ethers.utils.parseUnits("0.1", "ether"),
+                // gasLimit: 1000000,
+            })
+            transactionReceipt = await tx.wait()
+            playerContractReply = true
+            console.log("transactionReceipt: ", transactionReceipt)
+            lotteryGetData()
+            sendPlayerContract = false
+            console.error("vgika trans")
+        } catch (error) {
+            console.log(error)
+            playerContractReply = true
+            lotteryGetData()
+            transactionError = { error }
+            sendPlayerContract = false
+        }
     }
 
     const toggleMessage = () => {
@@ -115,9 +99,11 @@
     }
 </script>
 
+<!-- Initial div to justify header footer and main -->
 <div class="flex flex-col h-screen justify-between">
     <header class="h-10">
-        <div class="navbar bg-base-100 ">
+        <!-- Nav Bar start -->
+        <div class="navbar bg-base-100 border-y-4">
             <div class="flex-none">
                 <button class="btn btn-square btn-ghost">
                     <svg
@@ -134,126 +120,162 @@
                     >
                 </button>
             </div>
-            <div class="flex-none">
+            <div class="flex-1">
                 {#if $ethersStore.walletConnected == false}
-                    <button class="btn btn-wide" on:click={connectContract}>Connect</button>
+                    <!-- do nothing -->
                 {:else}
-                    <a class="btn btn-ghost normal-case text-xl">Connected</a>
+                    <!-- <a class="btn btn-ghost normal-case text-xl">Connected</a> -->
+                    <!-- Daisiui Stat to show values start  -->
+                    <div class="stats shadow">
+                        <div class="stat">
+                            <div class="stat-title">Nonce</div>
+                            <div class="stat-value text-primary">{nonce}</div>
+                            <div class="stat-desc">count of transactions</div>
+                        </div>
+
+                        <div class="stat">
+                            <div class="stat-title">Block Nr.</div>
+                            <div class="stat-value text-secondary">{block}</div>
+                            <div class="stat-desc">Block latest refresh</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-title">Block Time</div>
+                            <div class="stat-value text-secondary">{blockTS}</div>
+                            <div class="stat-desc">Block Timestamp</div>
+                        </div>
+                    </div>
+                    <!-- Daisiui Stat to show values end  -->
                 {/if}
             </div>
-            <div class="flex-1 normal-case text-xl font-bold ">
+            <div class="flex-none normal-case text-xl font-bold ">
                 <!-- navbar daisyui component -->
             </div>
+            {#if $ethersStore.walletConnected == true}
+                <div class="stats shadow">
+                    <div class="flex-none">
+                        <div class="stat">
+                            <div class="stat-title">Account balance</div>
+                            <div class="stat-value">{balanceSigner}</div>
+                            <div class="stat-actions">
+                                <button class="btn btn-sm btn-success">Add funds</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex-none">
+                        <div class="stat">
+                            <div class="stat-title">Address</div>
+                            <div class="stat-value">{slicedSigner}</div>
+                            <div class="stat-actions">
+                                <button class="btn btn-sm btn-failure">Disconnect</button>
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="flex-none">
-                <button class="btn btn-square btn-ghost">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        class="inline-block w-5 h-5 stroke-current"
-                        ><path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"
-                        /></svg
-                    >
-                </button>
-            </div>
+                    <div class="flex-none">
+                        <div class="stat">
+                            <div class="stat-figure text-secondary">
+                                <div class="avatar online">
+                                    <div class="w-16 rounded-full">
+                                        <img src="connection.jpg" alt="Connected" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {:else}
+                <div class="stats shadow">
+                    <div class="flex-none">
+                        <div class="stat">
+                            <div class="stat-figure text-secondary">
+                                <div class="avatar online">
+                                    <div class="w-16 rounded-full">
+                                        <img src="noConnection.jpg" alt="Disconnected" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {/if}
+            <div />
+            <!-- Nav Bar End -->
         </div>
     </header>
 
     <main class="mb-auto h-10 ">
         <div class="w-full ">
+            {#if $ethersStore.walletConnected == false}
+                <button class="btn btn-wide flex-none" on:click={connectContract}>Connect</button>
+            {/if}
             <!-- Modal daisyui component -->
-            <input type="checkbox" id="my-modal-6" class="modal-toggle" />
-            <div class="modal modal-bottom sm:modal-middle">
-                <div class="modal-box">
-                    <h3 class="font-bold text-lg">You have joined the lottery. Good luck!</h3>
+            <input type="checkbox" id="my-modal-5" class="modal-toggle" />
+            <div class="modal">
+                <!-- <div class="modal modal-bottom sm:modal-middle"> -->
+                <div class="modal-box w-11/12 max-w-5xl">
+                    <h3 class="font-bold text-lg">
+                        {#if transactionError !== null}
+                            Transaction Error!
+                        {:else}
+                            You have joined the lottery. Good luck!
+                        {/if}
+                    </h3>
                     <p class="py-4">
-                        <TrReceipt transReceipt={transactionReceipt} />
+                        <TrReceipt
+                            transReceipt={transactionReceipt}
+                            transError={transactionError}
+                        />
                     </p>
                     <div class="modal-action">
-                        <label for="my-modal-6" class="btn" on:click={toggleMessage}>Yay!</label>
+                        <label for="my-modal-5" class="btn" on:click={toggleMessage}>OK</label>
                     </div>
                 </div>
             </div>
 
             <!-- Leave a space between the navigator and the content -->
-            <div class="h-20" />
+            <div class="h-20 m-8" />
 
             <!-- here make 4 divs equal size  -->
             <div class="flex ...">
+                <div class="w-1/4 ... place-content-center" />
                 <div class="w-1/4 ... place-content-center">
-                    <!-- a series of Badges to show the data we want -->
-                    <div class="flex justify-center">
-                        <button class="btn gap-2">
-                            Address
-                            <div class="badge badge-secondary">
-                                {sliceAddress($ethersStore.signerAddress)}
+                    <div class="stats stats-vertical shadow">
+                        <div class="stat">
+                            <div class="stat-title">Lottery Fee</div>
+                            <div class="stat-value">{lotteryFee}</div>
+                            <div class="stat-desc">Minimum fee to enter</div>
+                        </div>
+
+                        <div class="stat">
+                            <div class="stat-title">Total players</div>
+                            <div class="stat-value">{totalPlayers}</div>
+                            <div class="stat-desc">Participation count</div>
+                        </div>
+
+                        <div class="stat">
+                            <div class="stat-title">Last winner</div>
+                            <div class="stat-value">{recentWinner}</div>
+                            <div class="stat-desc">Last winner address</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-title">Players</div>
+                            <div class="stat-value">
+                                {#each players as player, index}
+                                    {index} - {player}
+                                {/each}
                             </div>
-                        </button>
-                    </div>
-                    <br />
-                    <div class="flex justify-center">
-                        <button class="btn gap-2">
-                            Nonce
-                            <div class="badge badge-secondary">
-                                {nonce}
-                            </div>
-                        </button>
-                    </div>
-                    <br />
-                    <div class="flex justify-center">
-                        <button class="btn gap-2">
-                            Balance
-                            <div class="badge badge-secondary">
-                                {balance}
-                            </div>
-                        </button>
-                    </div>
-                    <br />
-                    <div class="flex justify-center">
-                        <button class="btn gap-2">
-                            Block
-                            <div class="badge badge-secondary">
-                                {block}
-                            </div>
-                        </button>
-                    </div>
-                    <br />
-                    <div class="flex justify-center">
-                        <button class="btn gap-2">
-                            Block Timestamp
-                            <div class="badge badge-secondary">
-                                {blockTS}
-                            </div>
-                        </button>
-                    </div>
-                </div>
-                <div class="w-1/4 ... place-content-center">
-                    <div>
-                        <h1>LOTTERY DETAILS :</h1>
-                        <br />
-                        <h2>lotteryFee : {lotteryFee} ETH</h2>
-                        <h2>totalPlayers : {totalPlayers}</h2>
-                        <h2>recentWinner : {recentWinner}</h2>
-                        <h2>lastTimeStamp : {lastTimeStamp}</h2>
-                        <h2>totalTimeFromLastWinner : {blockTS - lastTimeStamp}</h2>
-                        {players[0]}
-                        <h2>players : {players[0]}</h2>
-                        {#each players as player, index}
-                            {index} - {player}
-                        {/each}
+                            <div class="stat-desc">Players taking part</div>
+                        </div>
                     </div>
                 </div>
                 <div class="w-1/4 ... place-content-center">
                     <tr class="center">
                         {#if sendPlayerContract}
-                            <button class="btn loading" disabled>Lottery</button>
+                            <button class="btn loading btn-wide" disabled>Lottery</button>
                         {:else}
-                            <button class="btn" on:click={enterLottery}>Enter Lottery</button>
+                            <button class="btn btn-wide" on:click={enterLottery}
+                                >Enter Lottery</button
+                            >
                         {/if}
                     </tr>
                     <tr>
@@ -283,7 +305,7 @@
                                     </div>
                                 </div>
                                 <div class="flex-none">
-                                    <label for="my-modal-6" class="btn modal-button">see</label>
+                                    <label for="my-modal-5" class="btn modal-button">see</label>
                                 </div>
                             </div>
                         {/if}

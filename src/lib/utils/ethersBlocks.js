@@ -25,3 +25,16 @@ async function blockDatawithTransactions(_blockNr) {
 }
 
 export { blockNr, blockData, blockDatawithTransactions }
+
+//we can import above functions from the js and use them anywhere
+//import { blockNr, blockData, blockDatawithTransactions } from "$lib/utils/ethersBlocks"
+//let block, blockDt, blockTS
+//async function providerBlockFunctions() {
+//    block = await blockNr()
+//    blockDt = await blockData(block)
+//    blockTS = blockDt.timestamp
+//   blockDt = await blockData(10815949) // object shoing it in the console
+//   console.log("Block 10815949 data :", blockDt)
+//   blockTrans = await blockDatawithTransactions(10815949) // object showing it in the console
+//   console.log("Block 10815949 transactions :", blockTrans)
+//}
